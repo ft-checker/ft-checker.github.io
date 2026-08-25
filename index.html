@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FunTime Checker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-noise"></div>
+
+  <header class="header">
+    <div class="wrap header__row">
+      <a href="#" class="brand">
+        <span class="brand__mark"></span>
+        FunTime <span>Checker</span>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap hero__wrap">
+        <p class="hero__label">Сервер FunTime · Проверка на читы</p>
+        <h1 class="hero__title">FunTime Checker</h1>
+        <p class="hero__sub">Инструменты и базы индексации для проверки ПК на запрещённое ПО</p>
+
+        <nav class="nav-pills">
+          <a href="#programs" class="nav-pill">Программы чекер</a>
+          <a href="#index-1" class="nav-pill">Текст 1</a>
+          <a href="#index-2" class="nav-pill">Текст 2</a>
+          <a href="#index-3" class="nav-pill">Текст 3</a>
+        </nav>
+      </div>
+    </section>
+
+    <section id="programs" class="section">
+      <div class="wrap">
+        <div class="section__head">
+          <h2>Программы чекер</h2>
+          <p>Программы, используемые при проверке вашего компьютера</p>
+        </div>
+        <div class="programs" id="programsGrid"></div>
+      </div>
+    </section>
+
+    <section id="index-1" class="section section--index">
+      <div class="wrap">
+        <div class="section__head">
+          <span class="section__num">01</span>
+          <h2>Индексация JAR</h2>
+          <p>Поиск по размеру .jar файлов</p>
+        </div>
+        <div class="index-box">
+          <div class="index-box__top">
+            <span class="index-box__tag">Текст 1</span>
+            <button type="button" class="copy-btn" data-copy="index1">Копировать</button>
+          </div>
+          <pre class="index-box__text" id="index1"></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="index-2" class="section section--index">
+      <div class="wrap">
+        <div class="section__head">
+          <span class="section__num">02</span>
+          <h2>Индексация размеров</h2>
+          <p>Размеры файлов и подозрительные метки</p>
+        </div>
+        <div class="index-box">
+          <div class="index-box__top">
+            <span class="index-box__tag">Текст 2</span>
+            <button type="button" class="copy-btn" data-copy="index2">Копировать</button>
+          </div>
+          <pre class="index-box__text" id="index2"></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="index-3" class="section section--index">
+      <div class="wrap">
+        <div class="section__head">
+          <span class="section__num">03</span>
+          <h2>Индексация читов</h2>
+          <p>Названия клиентов, модов и запрещённого ПО</p>
+        </div>
+        <div class="index-box">
+          <div class="index-box__top">
+            <span class="index-box__tag">Текст 3</span>
+            <button type="button" class="copy-btn" data-copy="index3">Копировать</button>
+          </div>
+          <pre class="index-box__text index-box__text--wrap" id="index3"></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="download" class="section section--download">
+      <div class="wrap">
+        <div class="download-card">
+          <h2>Скачать чекер</h2>
+          <p>Загрузите чекер напрямую или через PowerShell</p>
+          <div class="download-card__actions">
+            <a href="https://github.com/flashkas/checker/archive/refs/heads/main.zip" class="btn btn--red" target="_blank" rel="noopener">Скачать чекер</a>
+            <button type="button" id="copyPsBtn" class="btn btn--outline">Скачать через PowerShell</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p>© 2026 FunTime Checker</p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast">Скопировано в буфер обмена</div>
+
+  <script src="script.js"></script>
+</body>
+</html>
