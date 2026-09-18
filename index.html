@@ -1,125 +1,943 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FunTime Checker</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FT Checker — проверка на читы для Minecraft</title>
+<meta name="description" content="FT Checker — инструмент проверки клиентов Minecraft на запрещённое ПО.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff2d40' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l7 3v5c0 4.6-3 8.1-7 10-4-1.9-7-5.4-7-10V6l7-3z'/%3E%3Cpath d='M9 12l2 2 4-4.5'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink:  { 950:'#0a0508', 900:'#120a0d', 850:'#170e12', 800:'#1e1418', 700:'#2a1c22', 600:'#38252d' },
+        line: '#2a1a20',
+        acc:  '#ff2d40',
+        vio:  '#8b9dff',
+        dng:  '#ff4d5e',
+        wrn:  '#ffb020',
+        mut:  '#9a8d93',
+        dim:  '#6b5a61'
+      },
+      fontFamily: {
+        sans: ['Manrope','ui-sans-serif','sans-serif'],
+        mono: ['"JetBrains Mono"','ui-monospace','monospace']
+      }
+    }
+  }
+}
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<style>
+  ::selection{ background:rgba(255,45,64,.3); color:#fff; }
+  body{ background:#0a0508; color:#f2e9ec; }
+
+  .bg-grid{
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:44px 44px;
+    -webkit-mask-image:radial-gradient(ellipse 90% 75% at 50% 0%, #000 25%, transparent 78%);
+            mask-image:radial-gradient(ellipse 90% 75% at 50% 0%, #000 25%, transparent 78%);
+  }
+
+  #siteHeader.scrolled{
+    background:rgba(10,5,8,.85);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid #2a1a20;
+  }
+  .nav-link{ position:relative; color:#9a8d93; transition:color .2s; }
+  .nav-link:hover{ color:#ffffff; }
+  .nav-link.active{ color:#ffffff; }
+  .nav-link.active::after{
+    content:''; position:absolute; left:0; right:0; bottom:-8px;
+    height:2px; background:#ff2d40; border-radius:2px;
+  }
+
+  [data-reveal]{
+    opacity:0; transform:translateY(26px);
+    transition:opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1);
+    transition-delay:var(--d,0ms);
+  }
+  [data-reveal].in{ opacity:1; transform:none; }
+  @media (prefers-reduced-motion: reduce){
+    [data-reveal]{ transition:none; opacity:1; transform:none; }
+  }
+
+  .term-body::-webkit-scrollbar{ width:8px; }
+  .term-body::-webkit-scrollbar-thumb{ background:#2a1c22; border-radius:4px; }
+  .term-body::-webkit-scrollbar-track{ background:transparent; }
+
+  .tline{ font-size:12.5px; line-height:1.9; white-space:nowrap; overflow:hidden; }
+  .t-cmd{ color:#f2e9ec; }
+  .t-info{ color:#9a8d93; }
+  .t-dim{ color:#6b5a61; }
+  .t-sec{ color:rgba(139,157,255,.75); font-size:11px; letter-spacing:.1em; margin:12px 0 2px; }
+
+  .t-item{ display:flex; align-items:center; gap:10px; padding:1px 8px; margin:0 -8px; border-radius:6px; }
+  .t-name{ color:#f2e9ec; font-weight:500; flex-shrink:0; }
+  .t-pid{ color:#6b5a61; font-size:11px; flex-shrink:0; }
+  .t-note{ color:#8a7c82; font-size:11px; overflow:hidden; text-overflow:ellipsis; }
+  @media (max-width:480px){ .t-note{ display:none; } }
+
+  .badge{ margin-left:auto; padding:1px 8px; border-radius:5px; font-size:9.5px; font-weight:700;
+          letter-spacing:.08em; flex-shrink:0; }
+  .badge.ok  { color:#f2e9ec; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); }
+  .badge.warn{ color:#ffb020; background:rgba(255,176,32,.07); border:1px solid rgba(255,176,32,.25); }
+  .badge.det { color:#ff4d5e; background:rgba(255,45,64,.1); border:1px solid rgba(255,45,64,.35); }
+
+  .t-item.det{ animation:dflash 1.2s ease-out; }
+  .t-item.det  .t-name{ color:#ff8090; }
+  .t-item.warn .t-name{ color:#ffc76b; }
+  @keyframes dflash{ 0%{ background:rgba(255,45,64,.25); } 100%{ background:transparent; } }
+
+  .verdict{ display:flex; align-items:center; gap:10px; border:1px solid; border-radius:10px;
+            padding:9px 14px; margin:12px 0 4px; font-weight:700; font-size:12px;
+            font-family:'JetBrains Mono',monospace; white-space:normal; }
+  .verdict svg{ width:16px; height:16px; flex-shrink:0; }
+  .verdict.flag { color:#ff4d5e; border-color:rgba(255,45,64,.4);  background:rgba(255,45,64,.08); }
+  .verdict.clean{ color:#ffffff; border-color:rgba(255,255,255,.35); background:rgba(255,255,255,.05); }
+
+  .tcur{ display:inline-block; width:8px; height:14px; margin-left:6px; background:#ffffff;
+         vertical-align:-2px; animation:blink 1.1s steps(2,start) infinite; }
+  @keyframes blink{ to{ visibility:hidden; } }
+
+  .sdot{ width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .sdot.idle{ background:#3d2c33; }
+  .sdot.running{ background:#ff2d40; animation:pulse 1.3s infinite; }
+  .sdot.clean{ background:#ffffff; }
+  .sdot.flag{ background:#ff2d40; }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,45,64,.45); } 70%{ box-shadow:0 0 0 6px rgba(255,45,64,0); } }
+
+  #termRestart.scanning svg{ animation:spin 1s linear infinite; }
+  #termRestart:disabled{ opacity:.4; cursor:wait; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .chip{
+    font-family:'JetBrains Mono',monospace; font-size:11px;
+    padding:5px 11px; border-radius:7px;
+    border:1px solid #2a1a20; background:#170e12; color:#9a8d93;
+    transition:color .2s, border-color .2s;
+  }
+  .chip:hover{ color:#f2e9ec; border-color:#38252d; }
+
+  .code-pill{
+    display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-family:'JetBrains Mono',monospace; font-size:12px;
+    padding:9px 14px; border-radius:10px;
+    border:1px solid #2a1a20; background:#120a0d; color:#9a8d93;
+  }
+  .code-pill .k{ color:#ff2d40; }
+
+  .acc-item{ border:1px solid #2a1a20; border-radius:14px; background:#120a0d;
+             transition:border-color .3s, background .3s; }
+  .acc-item:hover{ border-color:#38252d; }
+  .acc-item.open{ border-color:rgba(255,45,64,.4); background:#170e12; }
+  .acc-icon{ transition:transform .35s cubic-bezier(.22,1,.36,1), color .3s; color:#6b5a61; }
+  .acc-item.open .acc-icon{ transform:rotate(180deg); color:#ff2d40; }
+  .acc-body{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .45s cubic-bezier(.22,1,.36,1); }
+  .acc-item.open .acc-body{ grid-template-rows:1fr; }
+  .acc-body > div{ overflow:hidden; }
+
+  #toast{ transition:opacity .3s, transform .3s; }
+  #toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
 </head>
-<body>
-  <div class="bg-noise"></div>
 
-  <header class="header">
-    <div class="wrap header__row">
-      <a href="#" class="brand">
-        <span class="brand__mark"></span>
-        FunTime <span>Checker</span>
+<body id="top" class="font-sans antialiased overflow-x-hidden">
+
+<!-- ═══════════════ ХЕДЕР ═══════════════ -->
+<header id="siteHeader" class="fixed top-0 inset-x-0 z-50 transition-all duration-300">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6">
+    <div class="flex items-center h-16 gap-8">
+      <a href="#top" class="flex items-center gap-2.5 shrink-0">
+        <span class="w-9 h-9 rounded-lg bg-acc/10 border border-acc/30 flex items-center justify-center text-acc">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-[18px] h-[18px]">
+            <path d="M12 3l7 3v5c0 4.6-3 8.1-7 10-4-1.9-7-5.4-7-10V6l7-3z"/>
+            <path d="M9 12l2 2 4-4.5"/>
+          </svg>
+        </span>
+        <span class="font-extrabold tracking-tight text-lg">FT&nbsp;<span class="text-acc">Checker</span></span>
       </a>
+
+      <nav class="hidden md:flex items-center gap-7 text-sm font-medium">
+        <a href="#top"      class="nav-link">Главная</a>
+        <a href="#how"      class="nav-link">Как работает</a>
+        <a href="#features" class="nav-link">Возможности</a>
+        <a href="#download" class="nav-link">Скачать</a>
+        <a href="#faq"      class="nav-link">FAQ</a>
+      </nav>
+
+      <div class="ml-auto flex items-center gap-3">
+        <button onclick="startCheck()"
+                class="hidden sm:inline-flex items-center gap-2 bg-acc text-white font-bold text-sm px-4 py-2 rounded-lg
+                       hover:bg-[#ff4a5c] active:scale-[.97] transition shadow-[0_4px_20px_rgba(255,45,64,.25)]">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          Начать проверку
+        </button>
+        <button id="burger" class="md:hidden w-10 h-10 rounded-lg border border-line bg-ink-900 flex items-center justify-center text-mut">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
     </div>
-  </header>
+  </div>
 
-  <main>
-    <section class="hero">
-      <div class="wrap hero__wrap">
-        <p class="hero__label">Сервер FunTime · Проверка на читы</p>
-        <h1 class="hero__title">FunTime Checker</h1>
-        <p class="hero__sub">Инструменты и базы индексации для проверки ПК на запрещённое ПО</p>
+  <div id="mobileMenu" class="hidden md:hidden border-b border-line bg-ink-950/95 backdrop-blur-xl">
+    <nav class="px-5 py-4 flex flex-col gap-1 text-[15px] font-medium">
+      <a href="#top"      class="mob-link py-2.5 text-mut hover:text-white transition">Главная</a>
+      <a href="#how"      class="mob-link py-2.5 text-mut hover:text-white transition">Как работает</a>
+      <a href="#features" class="mob-link py-2.5 text-mut hover:text-white transition">Возможности</a>
+      <a href="#download" class="mob-link py-2.5 text-mut hover:text-white transition">Скачать</a>
+      <a href="#faq"      class="mob-link py-2.5 text-mut hover:text-white transition">FAQ</a>
+      <button onclick="startCheck()" class="mob-link mt-2 inline-flex items-center justify-center gap-2 bg-acc text-white font-bold px-4 py-3 rounded-lg">
+        <i data-lucide="play" class="w-4 h-4"></i> Начать проверку
+      </button>
+    </nav>
+  </div>
+</header>
 
-        <nav class="nav-pills">
-          <a href="#programs" class="nav-pill">Программы чекер</a>
-          <a href="#index-1" class="nav-pill">Текст 1</a>
-          <a href="#index-2" class="nav-pill">Текст 2</a>
-          <a href="#index-3" class="nav-pill">Текст 3</a>
-        </nav>
+<main>
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="relative pt-32 pb-20 md:pt-40 md:pb-24">
+  <div class="bg-grid absolute inset-0 pointer-events-none"></div>
+  <div class="absolute -top-40 left-1/4 w-[600px] h-[400px] rounded-full bg-acc/[0.05] blur-[120px] pointer-events-none"></div>
+
+  <div class="relative max-w-6xl mx-auto px-5 sm:px-6 grid lg:grid-cols-2 gap-14 lg:gap-12 items-center">
+
+    <div data-reveal>
+      <div class="inline-flex items-center gap-2.5 rounded-full border border-line bg-ink-900/80 px-4 py-1.5 mb-7">
+        <span class="w-2 h-2 rounded-full bg-acc animate-pulse"></span>
+        <span class="font-mono text-[11px] tracking-[.14em] text-mut uppercase">Инструмент модерации · FunTime</span>
       </div>
-    </section>
 
-    <section id="programs" class="section">
-      <div class="wrap">
-        <div class="section__head">
-          <h2>Программы чекер</h2>
-          <p>Программы, используемые при проверке вашего компьютера</p>
-        </div>
-        <div class="programs" id="programsGrid"></div>
+      <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.02]">
+        FT <span class="text-acc">Checker</span>
+      </h1>
+
+      <p class="mt-5 text-xl md:text-2xl font-bold text-white leading-snug">
+        Мощный инструмент проверки на читы для Minecraft
+      </p>
+      <p class="mt-4 text-mut leading-relaxed max-w-md">
+        Быстрая и точная проверка клиента на запрещённое ПО.
+        Используется администрацией серверов.
+      </p>
+
+      <div class="mt-8 flex flex-wrap gap-3.5">
+        <a href="#download"
+           class="inline-flex items-center gap-2.5 bg-acc text-white font-bold px-6 py-3.5 rounded-xl
+                  hover:bg-[#ff4a5c] active:scale-[.97] transition shadow-[0_6px_28px_rgba(255,45,64,.28)]">
+          <i data-lucide="download" class="w-[18px] h-[18px]"></i>
+          Скачать Checker
+        </a>
+        <a href="#how"
+           class="inline-flex items-center gap-2.5 border border-line bg-ink-900 text-white font-semibold px-6 py-3.5 rounded-xl
+                  hover:border-ink-600 hover:bg-ink-850 active:scale-[.97] transition">
+          <i data-lucide="play" class="w-[18px] h-[18px] text-acc"></i>
+          Как проходит проверка
+        </a>
       </div>
-    </section>
 
-    <section id="index-1" class="section section--index">
-      <div class="wrap">
-        <div class="section__head">
-          <span class="section__num">01</span>
-          <h2>Индексация JAR</h2>
-          <p>Поиск по размеру .jar файлов</p>
+      <div class="mt-12 pt-7 border-t border-line grid grid-cols-3 gap-4 max-w-md">
+        <div>
+          <div class="font-mono text-2xl font-bold text-acc" data-count="41" data-suffix=" с">0</div>
+          <div class="text-[11px] text-dim uppercase tracking-wider mt-1">средняя проверка</div>
         </div>
-        <div class="index-box">
-          <div class="index-box__top">
-            <span class="index-box__tag">Текст 1</span>
-            <button type="button" class="copy-btn" data-copy="index1">Копировать</button>
-          </div>
-          <pre class="index-box__text" id="index1"></pre>
+        <div>
+          <div class="font-mono text-2xl font-bold text-white" data-count="142">0</div>
+          <div class="text-[11px] text-dim uppercase tracking-wider mt-1">сигнатур читов</div>
         </div>
-      </div>
-    </section>
-
-    <section id="index-2" class="section section--index">
-      <div class="wrap">
-        <div class="section__head">
-          <span class="section__num">02</span>
-          <h2>Индексация размеров</h2>
-          <p>Размеры файлов и подозрительные метки</p>
-        </div>
-        <div class="index-box">
-          <div class="index-box__top">
-            <span class="index-box__tag">Текст 2</span>
-            <button type="button" class="copy-btn" data-copy="index2">Копировать</button>
-          </div>
-          <pre class="index-box__text" id="index2"></pre>
-        </div>
-      </div>
-    </section>
-
-    <section id="index-3" class="section section--index">
-      <div class="wrap">
-        <div class="section__head">
-          <span class="section__num">03</span>
-          <h2>Индексация читов</h2>
-          <p>Названия клиентов, модов и запрещённого ПО</p>
-        </div>
-        <div class="index-box">
-          <div class="index-box__top">
-            <span class="index-box__tag">Текст 3</span>
-            <button type="button" class="copy-btn" data-copy="index3">Копировать</button>
-          </div>
-          <pre class="index-box__text index-box__text--wrap" id="index3"></pre>
+        <div>
+          <div class="font-mono text-2xl font-bold text-white" data-count="12400" data-suffix="+">0</div>
+          <div class="text-[11px] text-dim uppercase tracking-wider mt-1">проверок за месяц</div>
         </div>
       </div>
-    </section>
-
-    <section id="download" class="section section--download">
-      <div class="wrap">
-        <div class="download-card">
-          <h2>Скачать чекер</h2>
-          <p>Загрузите чекер напрямую или через PowerShell</p>
-          <div class="download-card__actions">
-            <a href="https://github.com/ft-checker/ft-checker.github.io/releases/download/v1/checker.exe" class="btn btn--red" target="_blank" rel="noopener">Скачать чекер</a>
-            <button type="button" id="copyPsBtn" class="btn btn--outline">Скачать через PowerShell</button>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="wrap">
-      <p>© 2026 FunTime Checker</p>
     </div>
-  </footer>
 
-  <div id="toast" class="toast">Скопировано в буфер обмена</div>
+    <div data-reveal style="--d:150ms">
+      <div class="rounded-2xl border border-line bg-ink-900/90 shadow-[0_24px_70px_rgba(0,0,0,.6)] overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-line bg-ink-850">
+          <span class="w-2.5 h-2.5 rounded-full bg-ink-600"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-ink-600"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-acc/80"></span>
+          <span class="ml-3 font-mono text-[11px] text-mut truncate">FT Checker v3.2.1 — PowerShell</span>
+          <button id="termRestart" title="Запустить заново"
+                  class="ml-auto w-7 h-7 rounded-md border border-line bg-ink-800 flex items-center justify-center text-mut hover:text-acc hover:border-acc/50 transition">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div id="termBody" class="term-body h-[380px] sm:h-[430px] overflow-y-auto px-4 py-4 font-mono"></div>
+        <div class="flex items-center gap-2.5 px-4 py-2.5 border-t border-line bg-ink-850">
+          <span id="termDot" class="sdot idle"></span>
+          <span id="termStatus" class="font-mono text-[11px] text-mut truncate">Ожидание запуска…</span>
+          <span class="ml-auto font-mono text-[10px] text-dim hidden sm:inline">session&nbsp;#58213</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <script src="script.js"></script>
+<!-- ═══════════════ КАК РАБОТАЕТ ═══════════════ -->
+<section id="how" class="py-24 md:py-28 border-t border-line scroll-mt-20">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6">
+    <div class="mb-14 md:mb-16" data-reveal>
+      <div class="font-mono text-xs text-acc tracking-[.12em] mb-3">// 01 · КАК РАБОТАЕТ</div>
+      <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">Проверка за четыре шага</h2>
+      <p class="mt-3 text-mut max-w-xl leading-relaxed">
+        От запуска до готового вердикта проходит меньше минуты — и всё это фиксируется в отчёте.
+      </p>
+    </div>
+
+    <div class="relative max-w-3xl mx-auto">
+      <div class="absolute left-7 top-3 bottom-3 w-px bg-line" aria-hidden="true"></div>
+
+      <div class="space-y-10 md:space-y-12">
+
+        <div class="relative flex gap-5 sm:gap-7" data-reveal>
+          <div class="shrink-0 w-14 h-14 rounded-xl border border-line bg-ink-900 flex items-center justify-center font-mono font-semibold text-acc relative z-10">01</div>
+          <div class="pt-1.5 min-w-0">
+            <h3 class="text-lg font-bold">Запуск через командную строку</h3>
+            <p class="mt-2 text-mut text-[15px] leading-relaxed">Модератор выдаёт игроку одну команду — чекер запускается в PowerShell без установки и прав администратора.</p>
+            <div class="code-pill mt-4"><span class="k">PS&gt;</span> .\funtime-chk.bat</div>
+          </div>
+        </div>
+
+        <div class="relative flex gap-5 sm:gap-7" data-reveal style="--d:80ms">
+          <div class="shrink-0 w-14 h-14 rounded-xl border border-line bg-ink-900 flex items-center justify-center font-mono font-semibold text-acc relative z-10">02</div>
+          <div class="pt-1.5 min-w-0">
+            <h3 class="text-lg font-bold">Глубокое сканирование системы</h3>
+            <p class="mt-2 text-mut text-[15px] leading-relaxed">Автоматический обход процессов, загруженных модулей, файлов игры и артефактов Windows — около трёх тысяч объектов.</p>
+            <div class="code-pill mt-4"><span class="k">scope:</span> процессы · DLL · .minecraft · prefetch</div>
+          </div>
+        </div>
+
+        <div class="relative flex gap-5 sm:gap-7" data-reveal style="--d:160ms">
+          <div class="shrink-0 w-14 h-14 rounded-xl border border-line bg-ink-900 flex items-center justify-center font-mono font-semibold text-acc relative z-10">03</div>
+          <div class="pt-1.5 min-w-0">
+            <h3 class="text-lg font-bold">Сверка с базой сигнатур</h3>
+            <p class="mt-2 text-mut text-[15px] leading-relaxed">Каждый найденный объект сверяется с базой известных читов, инжекторов и DLL. Целостность проверяется по SHA-256.</p>
+            <div class="code-pill mt-4"><span class="k">sigcheck:</span> 142 сигнатуры · SHA-256</div>
+          </div>
+        </div>
+
+        <div class="relative flex gap-5 sm:gap-7" data-reveal style="--d:240ms">
+          <div class="shrink-0 w-14 h-14 rounded-xl border border-line bg-ink-900 flex items-center justify-center font-mono font-semibold text-acc relative z-10">04</div>
+          <div class="pt-1.5 min-w-0">
+            <h3 class="text-lg font-bold">Генерация отчёта</h3>
+            <p class="mt-2 text-mut text-[15px] leading-relaxed">Итог — вердикт CLEAN или FLAGGED с номером отчёта. Документ остаётся у модератора и признаётся основанием для блокировки.</p>
+            <div class="code-pill mt-4">reports/FT-58213.txt&nbsp;<span class="k">· CLEAN</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ВОЗМОЖНОСТИ ═══════════════ -->
+<section id="features" class="py-24 md:py-28 border-t border-line bg-ink-900/40 scroll-mt-20">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6">
+    <div class="mb-14 md:mb-16" data-reveal>
+      <div class="font-mono text-xs text-acc tracking-[.12em] mb-3">// 02 · ВОЗМОЖНОСТИ</div>
+      <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">Что видит чекер</h2>
+      <p class="mt-3 text-mut max-w-xl leading-relaxed">
+        Шесть уровней проверки — от запущенных процессов до следов, которые чит оставляет в Windows.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+      <div class="lg:col-span-2 rounded-2xl border border-line bg-ink-900 p-7 hover:border-acc/40 transition-colors" data-reveal>
+        <div class="flex items-start justify-between gap-4">
+          <div class="w-11 h-11 rounded-xl bg-acc/10 border border-acc/30 flex items-center justify-center text-acc shrink-0">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          </div>
+          <span class="font-mono text-[11px] text-vio border border-vio/25 bg-vio/5 rounded-md px-2.5 py-1 whitespace-nowrap">база от 28.10.2025</span>
+        </div>
+        <h3 class="mt-5 text-lg font-bold">Обнаружение известных чит-клиентов</h3>
+        <p class="mt-2 text-mut text-[15px] leading-relaxed max-w-lg">
+          142 сигнатуры клиентов, инжекторов и библиотек. База обновляется каждую неделю — новые сборки попадают в детект в течение 24 часов.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-2">
+          <span class="chip">Vape V4</span><span class="chip">Rise</span><span class="chip">Velocity</span>
+          <span class="chip">Flask</span><span class="chip">LiquidBounce</span><span class="chip">Sigma</span>
+          <span class="chip">Novel</span><span class="chip">FDP</span><span class="chip">Drip</span>
+          <span class="chip !text-white !border-white/30 !bg-white/5">и ещё 132</span>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-line bg-ink-900 p-7 hover:border-ink-600 transition-colors" data-reveal style="--d:60ms">
+        <div class="w-11 h-11 rounded-xl bg-ink-800 border border-line flex items-center justify-center text-white">
+          <i data-lucide="scan-line" class="w-5 h-5"></i>
+        </div>
+        <h3 class="mt-5 text-lg font-bold">Сканирование процессов и DLL</h3>
+        <p class="mt-2 text-mut text-[15px] leading-relaxed">Все запущенные процессы и модули игры сверяются с эталонными подписями и хеш-суммами.</p>
+        <div class="mt-4 font-mono text-[11px] text-dim space-y-1">
+          <div>javaw.exe · сверка <span class="text-white">OK</span></div>
+          <div>lwjgl.dll · SHA-256 <span class="text-white">OK</span></div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-line bg-ink-900 p-7 hover:border-ink-600 transition-colors" data-reveal>
+        <div class="w-11 h-11 rounded-xl bg-ink-800 border border-line flex items-center justify-center text-white">
+          <i data-lucide="folder-search" class="w-5 h-5"></i>
+        </div>
+        <h3 class="mt-5 text-lg font-bold">Проверка .minecraft и mods</h3>
+        <p class="mt-2 text-mut text-[15px] leading-relaxed">Целостность клиента, версия Forge, список модификаций и конфигов. Запрещённые моды видно сразу.</p>
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          <span class="chip !py-1 !px-2 !text-[10px]">/mods</span>
+          <span class="chip !py-1 !px-2 !text-[10px]">/versions</span>
+          <span class="chip !py-1 !px-2 !text-[10px]">/config</span>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-line bg-ink-900 p-7 hover:border-ink-600 transition-colors" data-reveal style="--d:60ms">
+        <div class="w-11 h-11 rounded-xl bg-ink-800 border border-line flex items-center justify-center text-white">
+          <i data-lucide="history" class="w-5 h-5"></i>
+        </div>
+        <h3 class="mt-5 text-lg font-bold">Prefetch и Recent files</h3>
+        <p class="mt-2 text-mut text-[15px] leading-relaxed">Следы запуска ПО на уровне Windows: чит виден, даже если его удалили прямо перед проверкой.</p>
+      </div>
+
+      <div class="rounded-2xl border border-line bg-ink-900 p-7 hover:border-acc/40 transition-colors" data-reveal style="--d:120ms">
+        <div class="w-11 h-11 rounded-xl bg-acc/10 border border-acc/30 flex items-center justify-center text-acc">
+          <i data-lucide="eye-off" class="w-5 h-5"></i>
+        </div>
+        <h3 class="mt-5 text-lg font-bold">Анти-обход</h3>
+        <p class="mt-2 text-mut text-[15px] leading-relaxed">Детект скрытия процессов, спуфа имён, заморозки окон и прокидывания через VM. Попытка обмана — автоматический флаг.</p>
+      </div>
+
+      <div class="rounded-2xl border border-line bg-ink-900 p-7 hover:border-ink-600 transition-colors" data-reveal style="--d:180ms">
+        <div class="w-11 h-11 rounded-xl bg-ink-800 border border-line flex items-center justify-center text-white">
+          <i data-lucide="file-check-2" class="w-5 h-5"></i>
+        </div>
+        <h3 class="mt-5 text-lg font-bold">Быстрый отчёт для модератора</h3>
+        <p class="mt-2 text-mut text-[15px] leading-relaxed">Готовый вердикт CLEAN / FLAGGED с номером отчёта — достаточно для блокировки без лишних споров.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ СКАЧИВАНИЕ ═══════════════ -->
+<section id="download" class="py-24 md:py-28 border-t border-line scroll-mt-20">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6">
+    <div class="mb-14 md:mb-16 text-center" data-reveal>
+      <div class="font-mono text-xs text-acc tracking-[.12em] mb-3">// 03 · СКАЧАТЬ</div>
+      <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">Получить FT Checker</h2>
+    </div>
+
+    <div class="relative max-w-3xl mx-auto rounded-2xl border border-line bg-ink-900 p-7 md:p-10 overflow-hidden" data-reveal>
+      <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-acc/70 to-transparent" aria-hidden="true"></div>
+
+      <div class="grid md:grid-cols-[1fr_auto] gap-8 md:gap-10 items-center">
+        <div class="min-w-0">
+          <div class="flex items-center gap-3">
+            <span class="w-11 h-11 rounded-xl bg-acc/10 border border-acc/30 flex items-center justify-center text-acc shrink-0">
+              <i data-lucide="terminal" class="w-5 h-5"></i>
+            </span>
+            <div>
+              <h3 class="text-lg font-bold leading-tight">FT Checker</h3>
+              <p class="font-mono text-[11px] text-dim">funtime-chk.bat · без установки</p>
+            </div>
+          </div>
+
+          <div class="mt-6 font-mono text-xs space-y-0">
+            <div class="flex justify-between gap-4 py-2 border-b border-line/70"><span class="text-dim">ВЕРСИЯ</span><span class="text-white">3.2.1</span></div>
+            <div class="flex justify-between gap-4 py-2 border-b border-line/70"><span class="text-dim">ПЛАТФОРМА</span><span class="text-white">Windows 7 / 10 / 11</span></div>
+            <div class="flex justify-between gap-4 py-2 border-b border-line/70"><span class="text-dim">ФОРМАТ</span><span class="text-white">.bat · без установки</span></div>
+            <div class="flex justify-between gap-4 py-2 border-b border-line/70"><span class="text-dim">ОБНОВЛЕНО</span><span class="text-white">28.10.2025</span></div>
+          </div>
+        </div>
+
+        <div class="md:w-64">
+          <button id="dlBtn"
+                  class="w-full inline-flex items-center justify-center gap-2.5 bg-acc text-white font-bold px-7 py-4 rounded-xl
+                         hover:bg-[#ff4a5c] active:scale-[.97] transition shadow-[0_8px_32px_rgba(255,45,64,.3)] disabled:opacity-60">
+            <i data-lucide="download" class="w-5 h-5"></i>
+            Скачать FT Checker
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FAQ ═══════════════ -->
+<section id="faq" class="py-24 md:py-28 border-t border-line bg-ink-900/40 scroll-mt-20">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6">
+    <div class="mb-14 md:mb-16" data-reveal>
+      <div class="font-mono text-xs text-acc tracking-[.12em] mb-3">// 04 · FAQ</div>
+      <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">Частые вопросы</h2>
+    </div>
+
+    <div class="max-w-3xl mx-auto space-y-3.5" data-reveal>
+
+      <div class="acc-item open">
+        <button class="acc-head w-full flex items-center gap-4 px-6 py-5 text-left" aria-expanded="true">
+          <span class="font-mono text-xs text-acc shrink-0">01</span>
+          <span class="font-bold text-[15px] sm:text-base">Безопасно ли это для моего компьютера?</span>
+          <i data-lucide="chevron-down" class="acc-icon w-5 h-5 ml-auto shrink-0"></i>
+        </button>
+        <div class="acc-body"><div>
+          <p class="px-6 pb-6 pl-[52px] text-mut text-[15px] leading-relaxed">
+            Да. Чекер работает только в режиме чтения: он не изменяет файлы, не собирает пароли и личные данные и не имеет доступа к аккаунтам. На компьютер отправляется исключительно итоговый отчёт — список проверок открыт и указан в документации.
+          </p>
+        </div></div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-head w-full flex items-center gap-4 px-6 py-5 text-left" aria-expanded="false">
+          <span class="font-mono text-xs text-acc shrink-0">02</span>
+          <span class="font-bold text-[15px] sm:text-base">Почему просят отключить антивирус?</span>
+          <i data-lucide="chevron-down" class="acc-icon w-5 h-5 ml-auto shrink-0"></i>
+        </button>
+        <div class="acc-body"><div>
+          <p class="px-6 pb-6 pl-[52px] text-mut text-[15px] leading-relaxed">
+            Чекер обращается к процессам и памяти игры, а эвристика антивируса может блокировать такое чтение — тогда проверка будет неполной или прерванной. Отключение требуется только на время проверки: файлы чекера подписаны, и после завершения защиту нужно включить обратно.
+          </p>
+        </div></div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-head w-full flex items-center gap-4 px-6 py-5 text-left" aria-expanded="false">
+          <span class="font-mono text-xs text-acc shrink-0">03</span>
+          <span class="font-bold text-[15px] sm:text-base">Что именно проверяет чекер?</span>
+          <i data-lucide="chevron-down" class="acc-icon w-5 h-5 ml-auto shrink-0"></i>
+        </button>
+        <div class="acc-body"><div>
+          <p class="px-6 pb-6 pl-[52px] text-mut text-[15px] leading-relaxed">
+            Запущенные процессы и загруженные DLL, целостность файлов игры, содержимое папки .minecraft и mods, следы запуска в Prefetch и Recent files, а также попытки скрытия — спуф имён процессов, заморозку окон и прокидывание через виртуальные машины.
+          </p>
+        </div></div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-head w-full flex items-center gap-4 px-6 py-5 text-left" aria-expanded="false">
+          <span class="font-mono text-xs text-acc shrink-0">04</span>
+          <span class="font-bold text-[15px] sm:text-base">Можно ли запустить проверку самостоятельно?</span>
+          <i data-lucide="chevron-down" class="acc-icon w-5 h-5 ml-auto shrink-0"></i>
+        </button>
+        <div class="acc-body"><div>
+          <p class="px-6 pb-6 pl-[52px] text-mut text-[15px] leading-relaxed">
+            Да, существует версия для игроков — она поможет убедиться, что ваш клиент чист перед заходом на сервер. Но официальным признаётся только отчёт, полученный модерацией во время проверки: самостоятельный запуск не освобождает от неё.
+          </p>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ═══════════════ ФУТЕР ═══════════════ -->
+<footer class="border-t border-line py-10">
+  <div class="max-w-6xl mx-auto px-5 sm:px-6">
+    <div class="flex flex-col md:flex-row gap-6 md:items-center md:justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="w-8 h-8 rounded-lg bg-acc/10 border border-acc/30 flex items-center justify-center text-acc">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+            <path d="M12 3l7 3v5c0 4.6-3 8.1-7 10-4-1.9-7-5.4-7-10V6l7-3z"/>
+            <path d="M9 12l2 2 4-4.5"/>
+          </svg>
+        </span>
+        <div>
+          <div class="font-extrabold tracking-tight leading-none">FT <span class="text-acc">Checker</span></div>
+          <div class="text-[11px] text-dim mt-1">© 2025 · инструмент модерации</div>
+        </div>
+      </div>
+
+      <nav class="flex flex-wrap gap-x-7 gap-y-2 text-sm text-mut">
+        <a href="#faq" class="hover:text-acc transition">Правила использования</a>
+        <a href="#" id="contactLink" class="hover:text-acc transition">Контакты</a>
+        <a href="#" id="discordLink" class="inline-flex items-center gap-1.5 hover:text-acc transition">
+          <i data-lucide="message-circle" class="w-4 h-4"></i> Discord
+        </a>
+      </nav>
+    </div>
+    <p class="mt-8 text-[11px] text-dim leading-relaxed max-w-2xl">
+      FT Checker — сторонний инструмент сообщества. Не является официальным продуктом Mojang / Microsoft и никак с ними не связан. Minecraft является товарным знаком Mojang Synergies AB.
+    </p>
+  </div>
+</footer>
+
+<!-- ═══════════════ TOAST ═══════════════ -->
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 translate-y-3 opacity-0 z-[80] flex items-center gap-3 rounded-xl border border-line bg-ink-800 px-4 py-3 shadow-[0_16px_50px_rgba(0,0,0,.6)] pointer-events-none max-w-[calc(100vw-40px)]">
+  <span id="toastIc" class="w-6 h-6 rounded-full bg-white/10 text-white flex items-center justify-center shrink-0">
+    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+  </span>
+  <span id="toastMsg" class="text-sm text-slate-200"></span>
+</div>
+
+<script>
+lucide.createIcons();
+
+/* ── хедер при скролле ── */
+const header = document.getElementById('siteHeader');
+const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 10);
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+/* ── мобильное меню ── */
+const burger = document.getElementById('burger');
+const mobileMenu = document.getElementById('mobileMenu');
+burger.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+document.querySelectorAll('.mob-link').forEach(el =>
+  el.addEventListener('click', () => mobileMenu.classList.add('hidden')));
+
+/* ── toast ── */
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  const ic = document.getElementById('toastIc');
+  document.getElementById('toastMsg').textContent = msg;
+  ic.className = 'w-6 h-6 rounded-full flex items-center justify-center shrink-0 ' +
+    (type === 'warn' ? 'bg-wrn/15 text-wrn' : 'bg-white/10 text-white');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ── появление секций при скролле ── */
+const revealIO = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); revealIO.unobserve(e.target); }
+  });
+}, { threshold: 0.12 });
+document.querySelectorAll('[data-reveal]').forEach(el => revealIO.observe(el));
+
+/* ── анимированные счётчики ── */
+function animateCount(el) {
+  const target = parseFloat(el.dataset.count);
+  const suffix = el.dataset.suffix || '';
+  const dur = 1400, t0 = performance.now();
+  const fmt = n => {
+    n = Math.round(n);
+    return (n >= 1000 ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u2009') : n.toString()) + suffix;
+  };
+  (function frame(t) {
+    const k = Math.min(1, (t - t0) / dur);
+    el.textContent = fmt(target * (1 - Math.pow(1 - k, 3)));
+    if (k < 1) requestAnimationFrame(frame);
+  })(t0);
+}
+const countIO = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { animateCount(e.target); countIO.unobserve(e.target); }
+  });
+}, { threshold: 0.6 });
+document.querySelectorAll('[data-count]').forEach(el => countIO.observe(el));
+
+/* ── подсветка активного пункта навигации ── */
+const navIO = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      const link = document.querySelector('.nav-link[href="#' + e.target.id + '"]');
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-40% 0px -55% 0px' });
+['how', 'features', 'download', 'faq'].forEach(id => {
+  const s = document.getElementById(id);
+  if (s) navIO.observe(s);
+});
+
+/* ── аккордеон FAQ ── */
+document.querySelectorAll('.acc-item').forEach(item => {
+  item.querySelector('.acc-head').addEventListener('click', () => {
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.acc-item.open').forEach(i => {
+      i.classList.remove('open');
+      i.querySelector('.acc-head').setAttribute('aria-expanded', 'false');
+    });
+    if (!wasOpen) {
+      item.classList.add('open');
+      item.querySelector('.acc-head').setAttribute('aria-expanded', 'true');
+    }
+  });
+});
+
+/* ── футер-ссылки ── */
+document.getElementById('contactLink').addEventListener('click', e => {
+  e.preventDefault();
+  toast('Почта поддержки: support@ft-checker.su');
+});
+document.getElementById('discordLink').addEventListener('click', e => {
+  e.preventDefault();
+  toast('Сервер поддержки: discord.gg/ft-checker');
+});
+
+/* ═══════════════════════════════════════════
+   СКАЧИВАНИЕ funtime-chk.bat
+   ═══════════════════════════════════════════ */
+const DL_NAME = 'funtime-chk.bat';
+const DL_URLS = [
+  'funtime-chk.bat',                                                                          // файл рядом с сайтом
+  'https://raw.githubusercontent.com/ft-checker/ft-checker.github.io/main/funtime-chk.bat',   // raw напрямую
+  'https://cdn.jsdelivr.net/gh/ft-checker/ft-checker.github.io@main/funtime-chk.bat'          // зеркало jsDelivr
+];
+
+document.getElementById('dlBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('dlBtn');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Скачивание…';
+  lucide.createIcons();
+
+  let ok = false;
+  for (const url of DL_URLS) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      if (!blob || blob.size === 0) continue;
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = DL_NAME;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+      ok = true;
+      break;
+    } catch (e) { /* следующее зеркало */ }
+  }
+
+  if (ok) {
+    toast(DL_NAME + ' — загрузка началась');
+  } else {
+    window.open(DL_URLS[1], '_blank', 'noopener');
+    toast('Прямое скачивание не сработало — файл открыт во вкладке, нажми Ctrl+S', 'warn');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = original;
+  lucide.createIcons();
+});
+
+/* ═══════════════════════════════════════════
+   ТЕРМИНАЛ: симуляция сканирования
+   ═══════════════════════════════════════════ */
+const termBody = document.getElementById('termBody');
+const termDot = document.getElementById('termDot');
+const termStatus = document.getElementById('termStatus');
+const restartBtn = document.getElementById('termRestart');
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let scanId = 0, nextFlagged = true;
+
+const BADGE = { ok: 'OK', warn: 'ПОДОЗРЕНИЕ', det: 'DETECTED' };
+const PROMPT = 'PS C:\\Users\\Moderator> ';
+
+function setStatus(cls, text) {
+  termDot.className = 'sdot ' + cls;
+  termStatus.textContent = text;
+}
+function scrollDown() { termBody.scrollTop = termBody.scrollHeight; }
+function killCursor() { const c = termBody.querySelector('.tcur'); if (c) c.remove(); }
+function addCursor(line) {
+  const s = document.createElement('span');
+  s.className = 'tcur';
+  line.appendChild(s);
+}
+function lineEl(cls) {
+  const d = document.createElement('div');
+  d.className = 'tline ' + cls;
+  return d;
+}
+
+async function typeCmd(text, id) {
+  const d = lineEl('t-cmd');
+  const pre = document.createElement('span');
+  pre.className = 'text-acc';
+  pre.textContent = PROMPT;
+  d.appendChild(pre);
+  const span = document.createElement('span');
+  d.appendChild(span);
+  termBody.appendChild(d);
+  addCursor(d);
+  scrollDown();
+  for (let i = 0; i < text.length; i++) {
+    if (id !== scanId) return;
+    span.textContent += text[i];
+    await sleep(16 + Math.random() * 22);
+  }
+}
+
+function addItem(it) {
+  killCursor();
+  const d = lineEl('t-item ' + (it.st === 'det' ? 'det' : it.st === 'warn' ? 'warn' : ''));
+  d.innerHTML =
+    '<span class="t-name">' + it.name + '</span>' +
+    (it.pid ? '<span class="t-pid">pid ' + it.pid + '</span>' : '') +
+    '<span class="t-note">' + it.note + '</span>' +
+    '<span class="badge ' + it.st + '">' + BADGE[it.st] + '</span>';
+  termBody.appendChild(d);
+  addCursor(d);
+  scrollDown();
+}
+
+async function runProgress(label, id) {
+  killCursor();
+  const d = lineEl('');
+  d.innerHTML = '<span class="t-note">' + label + '</span> <span class="text-acc"></span> <span class="text-dim"></span>';
+  termBody.appendChild(d);
+  scrollDown();
+  const bar = d.children[1], pct = d.children[2];
+  let p = 0;
+  while (p < 100) {
+    if (id !== scanId) return;
+    p = Math.min(100, p + Math.floor(Math.random() * 9) + 2);
+    const f = Math.round(p / 5);
+    bar.textContent = '[' + '█'.repeat(f) + '░'.repeat(20 - f) + ']';
+    pct.textContent = p + '%';
+    await sleep(55);
+  }
+  addCursor(d);
+}
+
+function addVerdict(v) {
+  killCursor();
+  const d = document.createElement('div');
+  d.className = 'verdict ' + (v === 'flag' ? 'flag' : 'clean');
+  d.innerHTML = '<i data-lucide="' + (v === 'flag' ? 'alert-triangle' : 'shield-check') + '"></i>' +
+                '<span>ВЕРДИКТ: ' + (v === 'flag'
+                  ? 'ОБНАРУЖЕНО ЗАПРЕЩЁННОЕ ПО — Rise Client (инжектор)'
+                  : 'НАРУШЕНИЙ НЕ ВЫЯВЛЕНО — допущен к игре') + '</span>';
+  termBody.appendChild(d);
+  lucide.createIcons();
+  addCursor(d);
+  scrollDown();
+}
+
+function buildScenario(flagged) {
+  const rep = 'FT-' + (10000 + Math.floor(Math.random() * 89999));
+  const time = (40 + Math.random() * 8).toFixed(1);
+  const s = [
+    { t: 'cmd',  text: '.\\funtime-chk.bat --full --report' },
+    { t: 'info', text: 'FT Checker v3.2.1 · модуль проверки клиентов' },
+    { t: 'info', text: 'Инициализация ядра сканирования… OK' },
+    { t: 'dim',  text: '[core] загрузка сигнатур: 142/142 · база от 28.10.2025' },
+    { t: 'sec',  text: 'СКАНИРОВАНИЕ ПРОЦЕССОВ' },
+    { t: 'item', name: 'javaw.exe',       pid: '4821', note: 'Minecraft 1.16.5 · FunTime', st: 'ok' },
+    { t: 'item', name: 'ft-launcher.exe', pid: '1190', note: 'официальный лаунчер',        st: 'ok' },
+    { t: 'item', name: 'chrome.exe',      pid: '3327', note: 'подписан: Google LLC',       st: 'ok' },
+    { t: 'item', name: 'discord.exe',     pid: '2904', note: 'подписан: Discord Inc.',     st: 'ok' }
+  ];
+  if (flagged) s.push({ t: 'item', name: 'rshelper.exe', pid: '6420', note: 'подписант отсутствует', st: 'warn' });
+  s.push(
+    { t: 'sec',  text: 'ЗАГРУЖЕННЫЕ МОДУЛИ (DLL)' },
+    { t: 'item', name: 'lwjgl.dll',    pid: '', note: 'SHA-256 сверен', st: 'ok' },
+    { t: 'item', name: 'opengl32.dll', pid: '', note: 'SHA-256 сверен', st: 'ok' }
+  );
+  if (flagged) s.push({ t: 'item', name: 'inject_helper.dll', pid: '', note: 'совпадение сигнатуры: Rise Client', st: 'det' });
+  s.push(
+    { t: 'sec',  text: 'АРТЕФАКТЫ ЗАПУСКА' },
+    { t: 'item', name: '.minecraft / mods', pid: '', note: '9 модификаций · запрещённых: 0', st: 'ok' },
+    { t: 'item', name: 'PREFETCH / RECENT', pid: '', note: 'следов обнуления не обнаружено', st: 'ok' },
+    { t: 'prog', text: 'Финальная сверка хеш-сумм' }
+  );
+  s.push({ t: 'verdict', v: flagged ? 'flag' : 'clean' });
+  s.push({ t: 'info', text: 'Отчёт сохранён: /reports/' + rep + '.txt' });
+  s.push({ t: 'dim',  text: 'Время проверки: ' + time + ' с · применено сигнатур: 142' });
+  s.push({ t: 'prompt' });
+  return s;
+}
+
+function formatSec(text) {
+  return '── ' + text + ' ' + '─'.repeat(Math.max(4, 44 - text.length));
+}
+
+async function runScan() {
+  const id = ++scanId;
+  const flagged = nextFlagged;
+  nextFlagged = Math.random() < 0.5;
+
+  termBody.innerHTML = '';
+  setStatus('running', 'Сканирование выполняется…');
+  restartBtn.classList.add('scanning');
+  restartBtn.disabled = true;
+
+  await sleep(400);
+
+  for (const step of buildScenario(flagged)) {
+    if (id !== scanId) return;
+    switch (step.t) {
+      case 'cmd':
+        await typeCmd(step.text, id);
+        await sleep(350);
+        break;
+      case 'info':
+      case 'dim': {
+        killCursor();
+        const d = lineEl(step.t === 'info' ? 't-info' : 't-dim');
+        d.textContent = step.text;
+        termBody.appendChild(d);
+        addCursor(d);
+        scrollDown();
+        await sleep(step.t === 'dim' ? 260 : 380);
+        break;
+      }
+      case 'sec': {
+        killCursor();
+        const d = lineEl('t-sec');
+        d.textContent = formatSec(step.text);
+        termBody.appendChild(d);
+        addCursor(d);
+        scrollDown();
+        await sleep(430);
+        break;
+      }
+      case 'item':
+        addItem(step);
+        await sleep(220 + Math.random() * 200);
+        break;
+      case 'prog':
+        await runProgress(step.text, id);
+        await sleep(300);
+        break;
+      case 'verdict':
+        addVerdict(step.v);
+        setStatus(flagged ? 'flag' : 'clean',
+          flagged ? 'Проверка завершена · обнаружено 1 нарушение'
+                  : 'Проверка завершена · нарушений нет');
+        await sleep(420);
+        break;
+      case 'prompt': {
+        killCursor();
+        const d = lineEl('t-cmd');
+        const pre = document.createElement('span');
+        pre.className = 'text-acc';
+        pre.textContent = PROMPT;
+        d.appendChild(pre);
+        termBody.appendChild(d);
+        addCursor(d);
+        scrollDown();
+        break;
+      }
+    }
+  }
+
+  restartBtn.classList.remove('scanning');
+  restartBtn.disabled = false;
+}
+
+restartBtn.addEventListener('click', runScan);
+
+function startCheck() {
+  document.getElementById('top').scrollIntoView({ behavior: 'smooth' });
+  runScan();
+}
+
+window.addEventListener('load', () => setTimeout(runScan, 700));
+</script>
 </body>
 </html>
